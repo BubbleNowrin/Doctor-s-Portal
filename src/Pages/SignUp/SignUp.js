@@ -1,15 +1,24 @@
 import React, { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../Contexts/AuthProvider';
+import useToken from '../../hooks/useToken';
 
 const SignUp = () => {
 
     const { createUser, updateUser } = useContext(AuthContext);
 
+    const navigate = useNavigate();
+
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [signUpError, setSignUpError] = useState('');
+    const [createdUser, setCreatedUser] = useState('');
+    const [token] = useToken(createdUser);
+
+    if (token) {
+        navigate('/');
+    }
 
     const handleSignUp = data => {
         setSignUpError('');
@@ -22,15 +31,40 @@ const SignUp = () => {
                     displayName: data.name
                 }
                 updateUser(userInfo)
-                    .then(() => { })
+                    .then(() => {
+                        saveUser(data.email, data.name);
+
+                    })
                     .catch(error => {
                         console.error(error);
-                        setSignUpError(error.message);
+
                     })
 
             })
-            .catch(error => console.error(error))
+            .catch(error => {
+                console.error(error);
+                setSignUpError(error.message);
+            })
     }
+
+    const saveUser = (email, name) => {
+        const user = { email, name };
+        fetch('https://doctors-portal-server-pied-ten.vercel.app/users', {
+            method: 'POST',
+            headers: {
+                "content-type": "application/json"
+            },
+            body: JSON.stringify(user)
+        })
+            .then(res => res.json())
+            .then(data => {
+                setCreatedUser(email);
+
+            })
+            .catch(err => console.log(err))
+    }
+
+
 
     return (
         <div className='h-[600px] flex justify-center items-center'>
